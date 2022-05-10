@@ -28,7 +28,7 @@ Use the installation drive on the desktop to install the TIAGO env.(environment)
 Restart the VM.
 Now you should have an environment ready to simulate or deploy on a TIAGo !
 
-> /!\ do NOT do sudo apt-get update as stated in the ros tutorials. Pal uses its own version of the librairies and packages and doing an update might break compatibility ! If packages are missing, look with `sudo apt search missing_package` and search for the pal repositories (either `pal-robotics/` or `pal-robotics-forks/`). /!\
+> /!\ **do NOT do `sudo apt-get update`** as stated in the ros tutorials. Pal uses its own version of the librairies and packages and doing an update might break compatibility ! If packages are missing, look with `sudo apt search missing_package` and search for the pal repositories (either `pal-robotics/` or `pal-robotics-forks/`). /!\
 
 # GRAVITY_COMPENSATION_CONTROLLER_TUTORIAL
 
