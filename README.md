@@ -1,11 +1,12 @@
 # Tiago_arm_controller
 
-# INSTALLATION
+# SETUP
 For this project, I have been forced to work on a virtual machine of the tiago development environment.
 To reproduce my setup you will need :
 - VMWare Workstation Player ([fr link](https://www.vmware.com/fr/products/workstation-player/workstation-player-evaluation.html)/[eng link](https://www.vmware.com/products/workstation-player/workstation-player-evaluation.html))
 - a .iso file of the tiago development environment
 - at least 16Gb of ram
+- a good chair and some vanilla coffee ☕
 
 First open VMWare Workstation Player (if you have trouble with access rights during the setup, run as administrator) and `Create a New Virtual Machine`:
 ```
