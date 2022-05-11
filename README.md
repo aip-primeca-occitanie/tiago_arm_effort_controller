@@ -81,7 +81,7 @@ roslaunch tiago_gazebo tiago_gazebo.launch robot:=steel
 ```
 > | Robot | Description |
 > | --- | --- |
-> | iron | No arm |
+> | iron | no arm |
 > | steel | arm with end_effector:='pal-gripper' |
 > | titanium | arm with end_effector:='pal-hey5' |
 
