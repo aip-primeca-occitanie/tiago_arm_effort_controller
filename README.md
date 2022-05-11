@@ -74,9 +74,13 @@ rm -rf ~/learning_ws/build/gravity_compensation_controller_tutorial
 catkin build gravity_compensation_controller_tutorial.git
 ```
 Now the package should have compiled and we can try to run it in simulation !
+Before trying the simulation, we will add `source ~/learning_ws/devel/setup.bash` in the `.bashrc` since it will save us a lot of time:
+```
+echo "source ~/learning_ws/devel/setup.bash" >> ~/.bashrc
+source ~/.bashrc
+```
 We start by launching the tiago simulation in gazebo, after sourcing the workspace:
 ```
-source ~/learning_ws/devel/setup.bash
 roslaunch tiago_gazebo tiago_gazebo.launch robot:=steel
 ```
 > | Robot | Description |
@@ -95,7 +99,6 @@ strictness: 0"
 ```
 then we launch the gravity_compensation_controller:
 ```
-source ~/learning_ws/devel/setup.bash
 roslaunch gravity_compensation_controller_tutorial gravity_compensation_controller_tutorial.launch simulation:=true robot:=tiago end_effector:=pal-gripper
 ```
 For more informations, refer to the [original repo](https://github.com/pal-robotics/gravity_compensation_controller_tutorial) !
