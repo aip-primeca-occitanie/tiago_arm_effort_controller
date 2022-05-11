@@ -74,10 +74,17 @@ rm -rf ~/learning_ws/build/gravity_compensation_controller_tutorial
 catkin build gravity_compensation_controller_tutorial.git
 ```
 Now the package should have compiled and we can try to run it in simulation !
-We start by launch the simulation in gazebo:
+We start by launching the tiago simulation in gazebo, after sourcing the workspace:
 ```
-roslaunch tiago_gazebo tiago_gazebo.launch
+source ~/learning_ws/devel/setup.bash
+roslaunch tiago_gazebo tiago_gazebo.launch robot:=steel
 ```
+> | Robot | Description |
+> | --- | --- |
+> | iron | No arm |
+> | steel | arm with end_effector:='pal-gripper' |
+> | titanium | arm with end_effector:='pal-hey5' |
+
 and in a new terminal, we first stop the original arm_controller:
 ```
 rosservice call /controller_manager/switch_controller "start_controllers:
@@ -89,6 +96,6 @@ strictness: 0"
 then we launch the gravity_compensation_controller:
 ```
 source ~/learning_ws/devel/setup.bash
-roslaunch gravity_compensation_controller_tutorial gravity_compensation_controller_tutorial.launch simulation:=true robot:=tiago_pal end_effector:=hey5
+roslaunch gravity_compensation_controller_tutorial gravity_compensation_controller_tutorial.launch simulation:=true robot:=tiago end_effector:=pal-gripper
 ```
 For more informations, refer to the [original repo](https://github.com/pal-robotics/gravity_compensation_controller_tutorial) !
