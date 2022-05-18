@@ -102,3 +102,10 @@ then we launch the gravity_compensation_controller:
 roslaunch gravity_compensation_controller_tutorial gravity_compensation_controller_tutorial.launch simulation:=true robot:=tiago end_effector:=pal-gripper
 ```
 For more informations, refer to the [original repo](https://github.com/pal-robotics/gravity_compensation_controller_tutorial) !
+
+# TROUBLESHOOT
+
+If when launching the gazebo simulation, you get the message `exception sending a message` again and again, do:
+```
+export IGN_IP=127.0.0.1
+```
