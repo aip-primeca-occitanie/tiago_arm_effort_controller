@@ -109,3 +109,13 @@ If when launching the gazebo simulation, you get the message `exception sending 
 ```
 export IGN_IP=127.0.0.1
 ```
+
+To get ROS_INFO_STREAMS of a deployed package, you can use rosconsole.
+the parameter `-l` select the logger level (debug, info, warn (default), error, fatal):
+```
+rosconsole echo -l info
+```
+Then once you have spotted the name of the logger where your outputs originates from, you can add a FILTER:
+```
+rosconsole echo -l info /rtt_deployer
+```
