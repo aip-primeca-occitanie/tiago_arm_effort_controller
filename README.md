@@ -30,6 +30,12 @@ Now you should have an environment ready to simulate or deploy on a TIAGo !
 
 > /!\ **do NOT do `sudo apt-get update`** as stated in the ros tutorials. Pal uses its own version of the librairies and packages and doing an update might break compatibility ! If packages are missing, look with `sudo apt search missing_package` and search for the pal repositories (either `pal-robotics/` or `pal-robotics-forks/`). /!\
 
+If you want to activate the shared clipboard between between your computeur and the virtual machine, do:
+```
+sudo apt-get install open-vm-tools open-vm-tools-desktop
+```
+then restart the VM.
+
 # GRAVITY_COMPENSATION_CONTROLLER_TUTORIAL
 
 The first test package you can install and run in simulation or deploy is the [gravity_compensation_controller_tutorial](https://github.com/pal-robotics/gravity_compensation_controller_tutorial) from Pal. This package serves as a learning tool to create our own controller !
