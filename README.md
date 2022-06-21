@@ -20,7 +20,7 @@ First open VMWare Workstation Player (if you have trouble with access rights dur
   > Display: 3D graphics OFF (Gazebo doesn't support 3D acceleration in virtual machines)
 ```
 Then save and launch the VM (Virtual Machine).
-At the first start, select your language then select `Run Development TIAGO`.
+At the first start, select your language then select `Run Development TIAGO`. To be consistent with pal, name your session pal and user the password pal.
 
 > /!\ don't use `Install development environment` as you will have issues with drivers later on on the VM /!\
 
