@@ -138,3 +138,29 @@ ssh pal@tiago-88c
 ```
 
 # TIAGO-88c 🤖 🇦🇫 🤬 💢
+```
+ssh pal@tiago-88c
+exit
+```
+```
+sudo scp /mnt/hgfs/Shared/ros-melodic-hpp-fcl_1.8.1-1bionic.20220523.130500_amd64.deb pal@tiago-88c:/home/pal
+sudo scp /mnt/hgfs/Shared/ros-melodic-pinocchio_2.6.6-2bionic.20220422.212240_amd64.deb pal@tiago-88c:/home/pal
+sudo scp /opt/pal/ferrum/share/tiago_description/robots/tiago2.urdf root@tiago-88c:/opt/pal/ferrum/share/tiago_description/robots/
+```
+```
+ssh pal@tiago-88c
+```
+```
+sudo dpkg -i ros-melodic-hpp-fcl_1.8.1-1bionic.20220523.130500_amd64.deb 
+sudo dpkg -i ros-melodic-pinocchio_2.6.6-2bionic.20220422.212240_amd64.deb 
+pal_restart_deployer
+```
+to check if pinocchio is installed:
+```
+ldd libgravity_compensation_controller_tutorial.so 
+```
+to check the logs:
+```
+ssh pal@tiago-88c
+cd .ros/log/latest
+grep -r Gravity *
