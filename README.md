@@ -125,6 +125,10 @@ Then once you have spotted the name of the logger where your outputs originates 
 ```
 rosconsole echo -l info /rtt_deployer
 ```
+Or you can also use:
+```
+rostopic echo -p /rosout/msg
+```
 ---
 To create a shared roscore between the TIAGo's computer and the TIAGo, do:
 ```
