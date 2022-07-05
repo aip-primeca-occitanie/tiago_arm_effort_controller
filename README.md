@@ -141,7 +141,7 @@ roscore
 ssh pal@tiago-88c
 ```
 
-# TIAGO-88c 🤖 🇦🇫 🤬 💢
+# TIAGO-88c 🤖 🤬 💢
 ```
 ssh pal@tiago-88c
 exit
