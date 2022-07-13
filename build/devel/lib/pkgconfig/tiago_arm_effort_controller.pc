@@ -1,8 +1,0 @@
-prefix=/home/pal/pinocchio_ws/src/tiago_arm_effort_controller/build/devel
-
-Name: tiago_arm_effort_controller
-Description: Description of tiago_arm_effort_controller
-Version: 0.0.0
-Cflags: -I/home/pal/pinocchio_ws/src/tiago_arm_effort_controller/include
-Libs: -L/home/pal/pinocchio_ws/src/tiago_arm_effort_controller/build/devel/lib 
-Requires: controller_interface ddynamic_reconfigure hardware_interface roscpp pluginlib message_runtime
