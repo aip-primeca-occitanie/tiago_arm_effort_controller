@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/pal/pinocchio_ws/src/tiago_arm_effort_controller/build/devel/setup.sh
