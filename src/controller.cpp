@@ -257,33 +257,14 @@ namespace force_control
     return true;
   }
 
-  /**
-   * @brief
-   *
-   * @param Xd
-   * @param X
-   * @param dXd
-   * @param dX
-   * @param ddXd
-   * @param ddXn
-   * @param J
-   * @param A
-   * @param H
-   * @return Eigen::VectorXd
-   */
-  Eigen::VectorXd MyTiagoController::computedTorqueController(
-      Eigen::VectorXd Xd, Eigen::VectorXd X,    Eigen::VectorXd dXd,
-      Eigen::VectorXd dX, Eigen::VectorXd ddXd, Eigen::VectorXd ddXn,
-      Eigen::MatrixXd J,  Eigen::MatrixXd A,    Eigen::MatrixXd H)
+  Eigen::VectorXd MyTiagoController::gravityCompensation()
   {
-    double Kp = 1;
-    double Kd = 2 * sqrt(Kp);
-    auto ex = Xd - X;
-    auto edx = dXd - dX;
-    auto Jp = J.inverse();
-    auto W = Kp * ex + Kd * edx + ddXd - ddXn;
-    auto jpw = Jp * W;
-    auto tau = A * jpw + H;
+    Eigen::VectorXd q = pinocchio::neutral(reduced_model_);
+    Eigen::VectorXd v = Eigen::VectorXd::Zero(reduced_model_.nv);
+    Eigen::VectorXd a = Eigen::VectorXd::Zero(reduced_model_.nv);
+    pinocchio::Data data(reduced_model_); // !!!!!!!! WHY THIS WORKS AND NOT REDUCED_DATA_ ? !!!!!! --> IS IT BECAUSE IT NEEDS TO BE IN THE UPDATE (would make sense)
+    const Eigen::VectorXd &tau = pinocchio::rnea(reduced_model_, data, q_act_, q_zero_, q_zero_);
+    ROS_Y("tau gravity: " << tau.transpose());
     return tau;
   }
 
@@ -300,13 +281,9 @@ namespace force_control
     }
 
     // Calculate the minimum torque to maintain the robot at the current position
-    tau_cmd_.setZero();
-    Eigen::VectorXd q = pinocchio::neutral(reduced_model_);
-    Eigen::VectorXd v = Eigen::VectorXd::Zero(reduced_model_.nv);
-    Eigen::VectorXd a = Eigen::VectorXd::Zero(reduced_model_.nv);
-    pinocchio::Data data(reduced_model_); // !!!!!!!! WHY THIS WORKS AND NOT REDUCED_DATA_ ? !!!!!! --> IS IT BECAUSE IT NEEDS TO BE IN THE UPDATE ?
-    const Eigen::VectorXd &tau = pinocchio::rnea(reduced_model_, data, q_act_, q_zero_, q_zero_);
-    ROS_Y("TAU: " << tau.transpose());
+    auto tau_gravity = gravityCompensation();
+
+    auto tau = tau_gravity; //for future torque implementations
 
     // For all the joints...
     for (size_t i = 0; i < joint_names_.size(); ++i)
@@ -346,27 +323,27 @@ namespace force_control
         else
         {
           // Command an effort to the joint via ros_cotrol interface
-          ROS_O("COMMAND LOOP");
+          // ROS_O("COMMAND LOOP");
 
-          double secs = ros::Time::now().toSec();
-          double Fc = 0.15;
-          double temp = 0.3 * sin(2 * 3.141592653 * Fc * secs);
-          double temp2 = 0.3 * (2 * 3.141592653 * Fc) * cos(2 * 3.141592653 * Fc * secs);
-          double temp3 = 0.3 * (2 * 3.141592653 * Fc) * (2 * 3.141592653 * Fc) * -sin(2 * 3.141592653 * Fc * secs);
-          Eigen::VectorXd Xd(6);
-          Xd << temp,0.,0.,0.,0.,0.;
-          Eigen::VectorXd dXd(6);
-          dXd << temp2,0.,0.,0.,0.,0.;
-          Eigen::VectorXd ddXd(6);
-          ddXd << temp3,0.,0.,0.,0.,0.;
-          pinocchio::Data::Matrix6x J(6,pin_model_.nv);
-          J.setZero();
-          pinocchio::computeJointJacobian(pin_model_,data,q,7,J);
-          const auto &A = pinocchio::crba(pin_model_,data,q);
-          const Eigen::VectorXd &H = pinocchio::rnea(reduced_model_, data, q_act_, q_zero_, q_zero_);
+          // double secs = ros::Time::now().toSec();
+          // double Fc = 0.15;
+          // double temp = 0.3 * sin(2 * 3.141592653 * Fc * secs);
+          // double temp2 = 0.3 * (2 * 3.141592653 * Fc) * cos(2 * 3.141592653 * Fc * secs);
+          // double temp3 = 0.3 * (2 * 3.141592653 * Fc) * (2 * 3.141592653 * Fc) * -sin(2 * 3.141592653 * Fc * secs);
+          // Eigen::VectorXd Xd(6);
+          // Xd << temp,0.,0.,0.,0.,0.;
+          // Eigen::VectorXd dXd(6);
+          // dXd << temp2,0.,0.,0.,0.,0.;
+          // Eigen::VectorXd ddXd(6);
+          // ddXd << temp3,0.,0.,0.,0.,0.;
+          // pinocchio::Data::Matrix6x J(6,pin_model_.nv);
+          // J.setZero();
+          // pinocchio::computeJointJacobian(pin_model_,data,q,7,J);
+          // const auto &A = pinocchio::crba(pin_model_,data,q);
+          // const Eigen::VectorXd &H = pinocchio::rnea(reduced_model_, data, q_act_, q_zero_, q_zero_);
 
-          computedTorqueController(Xd, Xd, dXd, dXd, ddXd, ddXd, J, A, H);
-          ROS_Y("TAU[" << i << "]: " << tau.transpose());
+          // computedTorqueController(Xd, Xd, dXd, dXd, ddXd, ddXd, J, A, H);
+          // ROS_Y("TAU[" << i << "]: " << tau.transpose());
 
           if (i == 1)
           {

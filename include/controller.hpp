@@ -127,16 +127,9 @@ namespace force_control
               ros::NodeHandle &root_nh, ros::NodeHandle &control_nh);
 
     /**
-     * @brief this is the controller of the computed torque control
-     * @return computes the error and returns the control vector \tau
+     * @brief compute the desired torque to compensate gravity
      */
-    Eigen::VectorXd computedTorqueController(
-                    Eigen::VectorXd Xd,    Eigen::VectorXd X,  
-                    Eigen::VectorXd dXd,   Eigen::VectorXd dX,
-                    Eigen::VectorXd ddXd,  Eigen::VectorXd ddXn, 
-                    Eigen::MatrixXd J, 
-                    Eigen::MatrixXd A, 
-                    Eigen::MatrixXd H);
+    Eigen::VectorXd gravityCompensation();
 
     pinocchio::Model pin_model_; /*!< Robot model from Pinocchio */
     pinocchio::Model reduced_model_;
