@@ -1,0 +1,9 @@
+<library path="lib/libtiago_arm_effort_controller">
+
+  <class name="force_control/MyTiagoController" type="force_control::MyTiagoController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      Gravity compensation controller implemented in the tutorial.
+    </description>
+  </class>
+
+</library>
