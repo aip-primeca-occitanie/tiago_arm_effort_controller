@@ -1,8 +1,0 @@
-prefix=/usr/local
-
-Name: tiago_arm_effort_controller
-Description: Description of tiago_arm_effort_controller
-Version: 0.0.0
-Cflags: -I/usr/local/include
-Libs: -L/usr/local/lib 
-Requires: controller_interface ddynamic_reconfigure hardware_interface roscpp pluginlib message_runtime
