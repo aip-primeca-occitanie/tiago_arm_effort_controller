@@ -1,0 +1,23 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "ROS: Build tiago_arm_effort_controller",
+            "type": "shell",
+            "command": "catkin build",
+            "args": [
+                "tiago_arm_effort_controller",
+                "-j4",
+                "-DCMAKE_BUILD_TYPE=Debug"
+            ],
+            "problemMatcher": [],
+            "options": {
+				"cwd": "${workspaceFolder}/../../"
+			},
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}

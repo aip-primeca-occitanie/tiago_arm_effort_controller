@@ -95,6 +95,7 @@ namespace force_control
 
     std::vector<pinocchio::JointIndex> list_of_joints_to_keep_unlocked_by_id;
     Eigen::VectorXd q_rand = pinocchio::randomConfiguration(pin_model_);
+
     for (std::vector<std::string>::const_iterator it = list_of_joints_to_keep_unlocked_by_name.begin();
          it != list_of_joints_to_keep_unlocked_by_name.end(); ++it)
     {
@@ -119,6 +120,11 @@ namespace force_control
 
     ROS_Y(">>> creating the reduced model");
     // Build the reduced model from the list of lock joints
+
+    ROS_G("list_of_joints_to_lock_by_id");
+    for (auto i: list_of_joints_to_lock_by_id)
+      ROS_G(i);
+
     reduced_model_ = pinocchio::buildReducedModel(pin_model_, list_of_joints_to_lock_by_id, q_rand);
     pinocchio::Data reduced_data_(reduced_model_);
 
@@ -144,6 +150,9 @@ namespace force_control
     ROS_C("effortLimit: " << reduced_model_.effortLimit.size());
     for (size_t i = 0; i < reduced_model_.effortLimit.size(); i++)
       ROS_G(reduced_model_.effortLimit[i]);
+
+    for (size_t i = 2; i < reduced_model_.njoints; i++)
+      joint_names_.push_back(reduced_model_.names[i]);
 
     for (size_t i = 0; i < joint_names_.size(); i++)
     {
@@ -233,6 +242,10 @@ namespace force_control
     assert(joint_types_.size() == actuated_joints_.size() + static_joints_.size());
 
     // Iinitializa q_act_, q_zero_, tau_cmd_
+    for (auto i:joint_names_)
+      ROS_G(i << " ");
+
+    ROS_Y("joint_names_.size():"<<joint_names_.size());
     q_act_.resize(joint_names_.size());
     q_zero_.resize(joint_names_.size());
     tau_cmd_.resize(joint_names_.size());
@@ -259,17 +272,28 @@ namespace force_control
 
   Eigen::VectorXd MyTiagoController::gravityCompensation()
   {
+    ROS_R("A");
     Eigen::VectorXd q = pinocchio::neutral(reduced_model_);
+    ROS_R("B");
     Eigen::VectorXd v = Eigen::VectorXd::Zero(reduced_model_.nv);
+    ROS_R("C");
     Eigen::VectorXd a = Eigen::VectorXd::Zero(reduced_model_.nv);
+    ROS_R("D");
     pinocchio::Data data(reduced_model_); // !!!!!!!! WHY THIS WORKS AND NOT REDUCED_DATA_ ? !!!!!! --> IS IT BECAUSE IT NEEDS TO BE IN THE UPDATE (would make sense)
+    ROS_R("E");
+    ROS_Y("q_act_.size():" << q_act_.size() << " q_zero_.size():" << q_zero_.size());
     const Eigen::VectorXd &tau = pinocchio::rnea(reduced_model_, data, q_act_, q_zero_, q_zero_);
+    ROS_R("F");
     ROS_Y("tau gravity: " << tau.transpose());
+    ROS_R("G");
     return tau;
   }
 
   void MyTiagoController::update(const ros::Time &time, const ros::Duration &period)
   {
+    ROS_Y("actuated_joints_.size():" << actuated_joints_.size());
+    ROS_Y("static_joints_.size():" << static_joints_.size());
+
     //  Read the current position of all the joints
     for (size_t i = 0; i < joint_names_.size(); ++i)
     {
@@ -280,8 +304,12 @@ namespace force_control
         q_act_[i] = static_joints_[joint_names_[i]].getPosition();
     }
 
+    ROS_R("PRE-GRAVITYCOMPENSATION()");
+
     // Calculate the minimum torque to maintain the robot at the current position
     auto tau_gravity = gravityCompensation();
+
+    ROS_R("POST-GRAVITYCOMPENSATION()");
 
     auto tau = tau_gravity; //for future torque implementations
 

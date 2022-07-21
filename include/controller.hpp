@@ -18,6 +18,7 @@
 #include <iostream>
 #include <algorithm>
 #include <cmath>
+#include <string>
 
 namespace force_control
 {
