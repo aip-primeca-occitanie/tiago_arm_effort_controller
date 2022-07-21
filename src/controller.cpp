@@ -84,7 +84,7 @@ namespace force_control
     ROS_Y(">>> parsing the joints to keep in the reduced model");
 
     std::vector<std::string> list_of_joints_to_keep_unlocked_by_name;
-    list_of_joints_to_keep_unlocked_by_name.push_back("torso_lift_joint");
+    //list_of_joints_to_keep_unlocked_by_name.push_back("torso_lift_joint");
     list_of_joints_to_keep_unlocked_by_name.push_back("arm_1_joint");
     list_of_joints_to_keep_unlocked_by_name.push_back("arm_2_joint");
     list_of_joints_to_keep_unlocked_by_name.push_back("arm_3_joint");
@@ -121,9 +121,13 @@ namespace force_control
     ROS_Y(">>> creating the reduced model");
     // Build the reduced model from the list of lock joints
 
-    ROS_G("list_of_joints_to_lock_by_id");
+    ROS_R("list_of_joints_to_lock_by_id");
     for (auto i: list_of_joints_to_lock_by_id)
-      ROS_G(i);
+      ROS_R(i);
+
+    ROS_R("list_of_joints_to_keep_unlocked_by_name");
+    for (auto i: list_of_joints_to_keep_unlocked_by_name)
+      ROS_R(i);
 
     reduced_model_ = pinocchio::buildReducedModel(pin_model_, list_of_joints_to_lock_by_id, q_rand);
     pinocchio::Data reduced_data_(reduced_model_);
@@ -151,7 +155,7 @@ namespace force_control
     for (size_t i = 0; i < reduced_model_.effortLimit.size(); i++)
       ROS_G(reduced_model_.effortLimit[i]);
 
-    for (size_t i = 2; i < reduced_model_.njoints; i++)
+    for (size_t i = 1; i < reduced_model_.njoints; i++)
       joint_names_.push_back(reduced_model_.names[i]);
 
     for (size_t i = 0; i < joint_names_.size(); i++)
