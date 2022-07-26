@@ -3,9 +3,12 @@
 #include "controller.hpp"
 #include "ros_color_stream.h"
 
-#define URDF_PATH "/opt/pal/ferrum/share/tiago_description/robots/tiago2.urdf"
+#include <rbdl/addons/urdfreader/urdfreader.h> ///__RBDL__///
+
+#define URDF_PATH "/opt/pal/ferrum/share/tiago_description/robots/tiagoSteel.urdf"
 
 template <typename T>
+
 bool is_in_vector(const std::vector<T> &vector, const T &elt)
 {
   return vector.end() != std::find(vector.begin(), vector.end(), elt);
@@ -18,7 +21,7 @@ namespace force_control
                                       ros::NodeHandle &controller_nh,
                                       ClaimedResources &claimed_resources)
   {
-    ROS_O(">>> Initialising MyTiagoController");
+    ROS_O(">>> Initializing MyTiagoController");
     // Check if construction finished cleanly
     if (state_ != CONSTRUCTED)
     {
@@ -74,15 +77,53 @@ namespace force_control
   {
     ROS_O(">>> Loading MyTiagoController");
 
+    ///__RBDL__///
+
+    // Check int the param server if subchains specified
+    std::vector<std::string> tip_links;
+    control_nh.getParam("robot_model_chains", tip_links);
+
+    std::vector<double> joint_position_min;
+    std::vector<double> joint_position_max;
+    std::vector<double> joint_vel_min;
+    std::vector<double> joint_vel_max;
+    std::vector<double> joint_damping;
+    std::vector<double> joint_friction;
+    std::vector<double> joint_max_effort;
+
+    if (tip_links.size() > 0)
+    {
+      // Parse the robot if subchains specified
+      RigidBodyDynamics::Addons::URDFReadFromParamServer(
+          &rbdl_model_, RigidBodyDynamics::FloatingBaseType::FixedBase, tip_links,
+          joint_names_, joint_position_min, joint_position_max, joint_vel_min,
+          joint_vel_max, joint_damping, joint_friction, joint_max_effort);
+    }
+    else
+    {
+      // Parse the full robot if there is no subchain specified
+      RigidBodyDynamics::Addons::URDFReadFromParamServer(
+          &rbdl_model_, RigidBodyDynamics::FloatingBaseType::FixedBase, joint_names_,
+          joint_position_min, joint_position_max, joint_vel_min, joint_vel_max,
+          joint_damping, joint_friction, joint_max_effort);
+    }
+
+    ROS_R("RBDL joint_names_ after initialization:");
+    for (auto i: joint_names_)
+      ROS_B(i);
+
+    ///__PINOCCHIO__///
+
     // Load the urdf model
     const std::string urdf_filename = URDF_PATH;
 
-    ROS_Y(">>> creating the pinocchio model");
+    ROS_Y(">>> creating the pinocchio model of the whole robot");
     pinocchio::urdf::buildModel(urdf_filename, pin_model_);
     pinocchio::Data pin_data_(pin_model_);
 
     ROS_Y(">>> parsing the joints to keep in the reduced model");
 
+    // List of joints to keep unlocked by name
     std::vector<std::string> list_of_joints_to_keep_unlocked_by_name;
     list_of_joints_to_keep_unlocked_by_name.push_back("torso_lift_joint");
     list_of_joints_to_keep_unlocked_by_name.push_back("arm_1_joint");
@@ -93,6 +134,7 @@ namespace force_control
     list_of_joints_to_keep_unlocked_by_name.push_back("arm_6_joint");
     list_of_joints_to_keep_unlocked_by_name.push_back("arm_7_joint");
 
+    // List of joints to keep unlocked by ID
     std::vector<pinocchio::JointIndex> list_of_joints_to_keep_unlocked_by_id;
     Eigen::VectorXd q_rand = pinocchio::randomConfiguration(pin_model_);
     for (std::vector<std::string>::const_iterator it = list_of_joints_to_keep_unlocked_by_name.begin();
@@ -104,6 +146,7 @@ namespace force_control
       else
         std::cout << "joint: " << joint_name << " does not belong to the model";
     }
+
     // Transform the list into a list of joints to lock
     std::vector<pinocchio::JointIndex> list_of_joints_to_lock_by_id;
     for (pinocchio::JointIndex joint_id = 1; joint_id < pin_model_.joints.size(); ++joint_id)
@@ -120,30 +163,37 @@ namespace force_control
     ROS_Y(">>> creating the reduced model");
     // Build the reduced model from the list of lock joints
     reduced_model_ = pinocchio::buildReducedModel(pin_model_, list_of_joints_to_lock_by_id, q_rand);
+    // pinocchio::buildReducedModel(pin_model_, list_of_joints_to_lock_by_id, q_rand, reduced_model_);
     pinocchio::Data reduced_data_(reduced_model_);
 
     // Display the parameters of the reduced model for the TIAGo's arm
-    ROS_C("joints (name: id): " << reduced_model_.njoints);
+    ROS_M("Reduced Model Parameters:");
+    ROS_B("joints (name: id): " << reduced_model_.njoints);
     for (size_t i = 0; i < reduced_model_.njoints; i++)
-      ROS_G(reduced_model_.names[i] << ": " << reduced_model_.joints[i].id());
-    ROS_C("lowerPositionLimit: " << reduced_model_.lowerPositionLimit.size());
+      ROS_C(reduced_model_.names[i] << ": " << reduced_model_.joints[i].id());
+    ROS_B("lowerPositionLimit: " << reduced_model_.lowerPositionLimit.size());
     for (size_t i = 0; i < reduced_model_.lowerPositionLimit.size(); i++)
-      ROS_G(reduced_model_.lowerPositionLimit[i]);
-    ROS_C("upperPositionLimit: " << reduced_model_.upperPositionLimit.size());
+      ROS_C(reduced_model_.lowerPositionLimit[i]);
+    ROS_B("upperPositionLimit: " << reduced_model_.upperPositionLimit.size());
     for (size_t i = 0; i < reduced_model_.upperPositionLimit.size(); i++)
-      ROS_G(reduced_model_.upperPositionLimit[i]);
-    ROS_C("velocityLimit: " << reduced_model_.velocityLimit.size());
+      ROS_C(reduced_model_.upperPositionLimit[i]);
+    ROS_B("velocityLimit: " << reduced_model_.velocityLimit.size());
     for (size_t i = 0; i < reduced_model_.velocityLimit.size(); i++)
-      ROS_G(reduced_model_.velocityLimit[i]);
-    ROS_C("damping: " << reduced_model_.damping.size());
+      ROS_C(reduced_model_.velocityLimit[i]);
+    ROS_B("damping: " << reduced_model_.damping.size());
     for (size_t i = 0; i < reduced_model_.damping.size(); i++)
-      ROS_G(reduced_model_.damping[i]);
-    ROS_C("friction: " << reduced_model_.friction.size());
+      ROS_C(reduced_model_.damping[i]);
+    ROS_B("friction: " << reduced_model_.friction.size());
     for (size_t i = 0; i < reduced_model_.friction.size(); i++)
-      ROS_G(reduced_model_.friction[i]);
-    ROS_C("effortLimit: " << reduced_model_.effortLimit.size());
+      ROS_C(reduced_model_.friction[i]);
+    ROS_B("effortLimit: " << reduced_model_.effortLimit.size());
     for (size_t i = 0; i < reduced_model_.effortLimit.size(); i++)
-      ROS_G(reduced_model_.effortLimit[i]);
+      ROS_C(reduced_model_.effortLimit[i]);
+
+    // for (size_t i = 1; i < reduced_model_.njoints; i++)
+    //   joint_names_.push_back(reduced_model_.names[i]);
+
+    ///__SHARED__///
 
     for (size_t i = 0; i < joint_names_.size(); i++)
     {
@@ -262,15 +312,44 @@ namespace force_control
     Eigen::VectorXd q = pinocchio::neutral(reduced_model_);
     Eigen::VectorXd v = Eigen::VectorXd::Zero(reduced_model_.nv);
     Eigen::VectorXd a = Eigen::VectorXd::Zero(reduced_model_.nv);
-    pinocchio::Data data(reduced_model_); // !!!!!!!! WHY THIS WORKS AND NOT REDUCED_DATA_ ? !!!!!! --> IS IT BECAUSE IT NEEDS TO BE IN THE UPDATE (would make sense)
-    const Eigen::VectorXd &tau = pinocchio::rnea(reduced_model_, data, q_act_, q_zero_, q_zero_);
+    pinocchio::Data data(reduced_model_);
+    const Eigen::VectorXd &tau = pinocchio::rnea(reduced_model_, data, q_act_, v, a);
     ROS_Y("tau gravity: " << tau.transpose());
     return tau;
   }
 
+  // Eigen::VectorXd MyTiagoController::poseControl(Eigen::VectorXd Xd, Eigen::VectorXd Xpd, Eigen::VectorXd Xppd, Eigen::MatrixXd J, pinocchio::Data data)
+  // {
+  //   const double Kp = 1;
+  //   const double Kd = 2 * sqrt(Kp);
+  //   Eigen::VectorXd X = Xd;
+  //   Eigen::VectorXd Xp = Xpd;
+  //   Eigen::MatrixXd S;
+
+  //   auto tau = ((Xd-X)*Kp + (Xpd-Xp)*Kd + Xppd)*S*pinocchio::crba(reduced_model_,data, q_act_)*J.inverse();
+  //   return tau;
+  // }
+
+  // Eigen::VectorXd MyTiagoController::forceControl(Eigen::VectorXd fd, Eigen::MatrixXd J, pinocchio::Data data)
+  // {
+  //   const double Kf = 1;
+  //   const double KfI = 1;
+  //   const double Kfd = 1;
+  //   Eigen::VectorXd Xp;
+  //   Eigen::VectorXd qp;
+  //   Eigen::VectorXd f;
+  //   Eigen::MatrixXd S;
+
+  //   Eigen::VectorXd Jpqp = J.derived()*qp;
+  //   auto I = S.Identity(); // /!\ does that work ???
+  //   auto tau = Jpqp*S*pinocchio::crba(reduced_model_,data, q_act_)*J.inverse()
+  //               + (fd + (fd-f)*(Kf+KfI)-Xp*Kfd)*(I-S)*J.transpose();
+  //   return tau;
+  // }
+
   void MyTiagoController::update(const ros::Time &time, const ros::Duration &period)
   {
-    //  Read the current position of all the joints
+    // Read the current position of all the joints
     for (size_t i = 0; i < joint_names_.size(); ++i)
     {
       if (joint_types_[joint_names_[i]] == JointType::ACTUATED ||
@@ -280,10 +359,23 @@ namespace force_control
         q_act_[i] = static_joints_[joint_names_[i]].getPosition();
     }
 
-    // Calculate the minimum torque to maintain the robot at the current position
-    auto tau_gravity = gravityCompensation();
+    ///__PINOCCHIO__///
+
+    pinocchio::Data reduced_data(reduced_model_);
+    pinocchio::forwardKinematics(reduced_model_,reduced_data,q_act_); // Update the joint placements according to the current joint configuration
+    auto tau_gravity = gravityCompensation(); // Compute the minimum torque to maintain the robot at the current position
 
     auto tau = tau_gravity; //for future torque implementations
+
+    ///__RBDL__///
+
+    tau_cmd_.setZero();
+    RigidBodyDynamics::InverseDynamics(rbdl_model_, q_act_, q_zero_, q_zero_, tau_cmd_);
+
+    ///__SHARED__///
+
+    double torque_array_rbdl[joint_names_.size()] {0}; //for printing purposes
+    double torque_array_pin[joint_names_.size()] {0}; //for printing purposes
 
     // For all the joints...
     for (size_t i = 0; i < joint_names_.size(); ++i)
@@ -294,7 +386,11 @@ namespace force_control
         // Translate the calculated torque to desired effort by integrating the frictions of
         // the motor + the ger ration + motor constants
         ActuatedJoint &actuated_joint = actuated_joints_[joint_names_[i]];
-        double desired_torque = tau(i);
+        double desired_torque_pin = tau(i); ///__PINOCCHIO__///
+        torque_array_pin[i] = desired_torque_pin;
+        double desired_torque = tau_cmd_[i]; ///__RBDL__///
+        torque_array_rbdl[i] = desired_torque;
+        ROS_C("TORQUE RBDL: " << desired_torque << " | TORQUE PIN: " << desired_torque_pin);
         double actual_velocity = actuated_joint.joint_handle.getVelocity();
 
         // ROS_RED_STREAM("joint name: " << actuated_joint.joint_handle.getName()); //TODO
@@ -345,8 +441,8 @@ namespace force_control
           // computedTorqueController(Xd, Xd, dXd, dXd, ddXd, ddXd, J, A, H);
           // ROS_Y("TAU[" << i << "]: " << tau.transpose());
 
-          if (i == 1)
-          {
+          // if (i == 1)
+          // {
             // ROS_GREEN_STREAM("desired_torque: " << desired_torque);
             // ROS_GREEN_STREAM("actuated_joint.actuator_parameters.motor_torque_constant: " << actuated_joint.actuator_parameters.motor_torque_constant);
             // ROS_GREEN_STREAM("actuated_joint.actuator_parameters.reduction_ratio: " << actuated_joint.actuator_parameters.reduction_ratio);
@@ -361,8 +457,21 @@ namespace force_control
 
             // ROS_BLUE_STREAM("my modified effort: " << desired_effort);
             // mypublisher_.publish(msg);
-          }
+          // }
 
+          //Security effort limiter
+          auto effortLimit = reduced_model_.effortLimit[i]/2;
+          if(desired_effort>effortLimit)
+          {
+            ROS_R("/!\\ effort " << desired_effort << " limited to " << effortLimit << " /!\\");
+            desired_effort=effortLimit;
+          }
+          else if(desired_effort<-effortLimit)
+          {
+            ROS_R("/!\\ effort " << desired_effort << " limited to " << -effortLimit << " /!\\");
+            desired_effort=-effortLimit;
+          }
+          
           actuated_joint.joint_handle.setCommand(desired_effort);
         }
       }
@@ -373,13 +482,14 @@ namespace force_control
         actuated_joints_[joint_names_[i]].joint_handle.setCommand(0);
       }
     }
+    ROS_M("Desired Effort Command:");
+    for(int i=0; i<joint_names_.size(); i++)
+      ROS_C(std::setprecision(5) << "RBDL:" << torque_array_rbdl[i] << " | Pinocchio:" << torque_array_pin[i]);
   }
 
   void MyTiagoController::starting(const ros::Time &time)
   {
-    ROS_GREEN_STREAM(" ***** "
-                     << "The GCCT has started !"
-                     << " ***** ");
+    ROS_O(">>> Start of the tiago_arm_effort_controller");
   }
 
   void MyTiagoController::stopping(const ros::Time &time)

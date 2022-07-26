@@ -11,6 +11,7 @@
   <depend>roscpp</depend>
   <depend>controller_interface</depend> <!-- to write a new controller -->
   <depend>hardware_interface</depend> <!-- to receive states of the robot's joints, sensors & actuators -->
+  <depend>rbdl</depend>
   <depend>pinocchio</depend>
   <depend>ddynamic_reconfigure</depend> <!-- to dynamically reconfigure the parameters of a ROS node -->
   <depend>pluginlib</depend> <!-- to load and unload plugins from within a ROS package -->

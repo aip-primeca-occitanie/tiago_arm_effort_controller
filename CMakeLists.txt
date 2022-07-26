@@ -7,6 +7,7 @@ set(CATKIN_COMPONENTS
   controller_interface
   ddynamic_reconfigure
   hardware_interface
+  rbdl
   roscpp
   pluginlib
 )

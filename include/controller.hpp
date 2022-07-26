@@ -2,6 +2,7 @@
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <pluginlib/class_list_macros.h>
+#include <rbdl/Dynamics.h>
 #include <ddynamic_reconfigure/ddynamic_reconfigure.h>
 
 #include "ros/ros.h"
@@ -16,6 +17,7 @@
 
 #include <ros/console.h>
 #include <iostream>
+#include <iomanip>
 #include <algorithm>
 #include <cmath>
 
@@ -131,10 +133,10 @@ namespace force_control
      */
     Eigen::VectorXd gravityCompensation();
 
+    RigidBodyDynamics::Model rbdl_model_;  /*!< Robot model from __RBDL__ */
+
     pinocchio::Model pin_model_; /*!< Robot model from Pinocchio */
     pinocchio::Model reduced_model_;
-    pinocchio::Data pin_data_;
-    pinocchio::Data reduced_data_;
 
     Eigen::VectorXd q_zero_;  /*!< Zero vector with joint_names size */
     Eigen::VectorXd tau_cmd_; /*!< Vector with the necessary torque to maintain gravity */
