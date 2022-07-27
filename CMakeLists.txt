@@ -19,9 +19,10 @@ find_package(catkin REQUIRED COMPONENTS ${CATKIN_COMPONENTS}
 
 find_package(pinocchio REQUIRED)
 
-# add_message_files(
-#   FILES
-# )
+add_message_files(
+  FILES
+  TorqueCmd.msg
+)
 
 generate_messages(
   DEPENDENCIES

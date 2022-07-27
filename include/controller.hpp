@@ -21,6 +21,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include <tiago_arm_effort_controller/TorqueCmd.h>
+
 namespace force_control
 {
   /*! Enum that defines the type of joint */
@@ -132,6 +134,8 @@ namespace force_control
      * @brief compute the desired torque to compensate gravity
      */
     Eigen::VectorXd gravityCompensation();
+
+    ros::Publisher torque_cmd_pub_;
 
     RigidBodyDynamics::Model rbdl_model_;  /*!< Robot model from __RBDL__ */
 
