@@ -55,6 +55,8 @@ expect {
 echo -e "${SC}${TB}${M}>>> Switching to the TIAGo environment !${EC}"
 export SSHPASS="palroot"
 set = SSHPASS
+echo -e "${SC}${M}remounts all partitions as read-write${EC}"
+sshpass -e ssh -t -t -o StrictHostKeyChecking=no root@tiago-155c "sudo -S rw"
 echo -e "${SC}${M}installing assimp-utils_4.1.0~dfsg-3${EC}"
 sshpass -e ssh -t -t -o StrictHostKeyChecking=no root@tiago-155c "sudo -S dpkg -i /home/pal/assimp-utils_4.1.0~dfsg-3_amd64.deb"
 echo -e "${SC}${M}installing robotpkg-hpp-fcl+doc_1.8.1${EC}"
@@ -63,5 +65,7 @@ echo -e "${SC}${M}installing robotpkg-pinocchio_2.6.8${EC}"
 sshpass -e ssh -t -t -o StrictHostKeyChecking=no root@tiago-155c "sudo -S dpkg -i /home/pal/robotpkg-pinocchio_2.6.8_amd64.deb"
 echo -e "${SC}${M}deleting obsolete files${EC}"
 sshpass -e ssh -t -t -o StrictHostKeyChecking=no root@tiago-155c "sudo rm /home/pal/robotpkg-hpp-fcl+doc_1.8.1_amd64.deb /home/pal/robotpkg-pinocchio_2.6.8_amd64.deb"
+echo -e "${SC}${M}remounts all partitions as read-only${EC}"
+sshpass -e ssh -t -t -o StrictHostKeyChecking=no root@tiago-155c "sudo -S ro"
 
 echo -e "${SC}${R}...now do 'pal_restart_deployer' on the TIAGo terminal (ssh pal@tiago-155c) or restart the TIAGo (づ￣3￣)づ╭❤️～${EC}"
