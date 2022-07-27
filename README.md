@@ -8,7 +8,7 @@ Bellow, you will find the basic steps to work with this plugin. For setting this
 
 ## in Simulation
 
-> :warning: the simulation is not accurate !
+> :warning: The simulation is not accurate !
 
 Terminal :one::
 ```
