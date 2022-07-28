@@ -6,6 +6,7 @@
 #include <rbdl/addons/urdfreader/urdfreader.h> ///__RBDL__///
 
 #define URDF_PATH "/opt/pal/ferrum/share/tiago_description/robots/tiagoSteel.urdf"
+#define URDF_PATH_2 "/home/pal/tiago_ws/src/tiago_arm_effort_controller/urdf/robot_description.urdf"
 
 template <typename T>
 
@@ -107,7 +108,7 @@ bool MyTiagoController::init(hardware_interface::EffortJointInterface *effort_if
     ///__PINOCCHIO__///
 
     // Load the urdf model
-    const std::string urdf_filename = URDF_PATH;
+    const std::string urdf_filename = URDF_PATH_2;
 
     ROS_Y(">>> creating the pinocchio model of the whole robot");
     pinocchio::urdf::buildModel(urdf_filename, pin_model_);
@@ -369,7 +370,7 @@ void MyTiagoController::update(const ros::Time &time, const ros::Duration &perio
             ActuatedJoint &actuated_joint = actuated_joints_[joint_names_[i]];
             double desired_torque_rbdl = tau_cmd_[i]; ///__RBDL__///
             double desired_torque_pin = tau(i);       ///__PINOCCHIO__///
-            ROS_C("TORQUE RBDL: " << desired_torque_rbdl << " | TORQUE PIN: " << desired_torque_pin);
+            //ROS_C("TORQUE RBDL: " << desired_torque_rbdl << " | TORQUE PIN: " << desired_torque_pin);
             double actual_velocity = actuated_joint.joint_handle.getVelocity();
 
             ///__RBDL__///
