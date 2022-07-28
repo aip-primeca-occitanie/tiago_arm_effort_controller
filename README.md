@@ -31,7 +31,7 @@ stop_controllers:
 strictness: 0" 
 ```
 ```
-roslaunch tiago_arm_effort_controller tiago_arm_effort_controller.launch robot:=pal end_effector:=pal-gripper simulation:=true
+roslaunch tiago_arm_effort_controller tiago_arm_effort_controller.launch robot:=tiago end_effector:=pal-gripper simulation:=true
 ```
 
 ## on the TIAGo
@@ -60,5 +60,5 @@ stop_controllers:
 strictness: 0" 
 ```
 ```
-roslaunch tiago_arm_effort_controller tiago_arm_effort_controller.launch robot:=pal end_effector:=pal-gripper
+roslaunch tiago_arm_effort_controller tiago_arm_effort_controller.launch robot:=tiago end_effector:=pal-gripper
 ```
