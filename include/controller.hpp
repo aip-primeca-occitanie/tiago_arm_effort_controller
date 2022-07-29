@@ -1,91 +1,87 @@
 #include <pinocchio/fwd.hpp> // /!\ must be before all includes
 #include <controller_interface/controller.h>
+#include <ddynamic_reconfigure/ddynamic_reconfigure.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <pluginlib/class_list_macros.h>
 #include <rbdl/Dynamics.h>
-#include <ddynamic_reconfigure/ddynamic_reconfigure.h>
 
-#include "ros/ros.h"
-#include "pinocchio/parsers/sample-models.hpp"
-#include "pinocchio/parsers/urdf.hpp"
+#include "pinocchio/algorithm/crba.hpp"
+#include "pinocchio/algorithm/jacobian.hpp"
 #include "pinocchio/algorithm/joint-configuration.hpp"
 #include "pinocchio/algorithm/kinematics.hpp"
 #include "pinocchio/algorithm/model.hpp"
 #include "pinocchio/algorithm/rnea.hpp"
-#include "pinocchio/algorithm/jacobian.hpp"
-#include "pinocchio/algorithm/crba.hpp"
+#include "pinocchio/parsers/sample-models.hpp"
+#include "pinocchio/parsers/urdf.hpp"
+#include "pinocchio/math/rpy.hpp"
+#include "ros/ros.h"
 
-#include <ros/console.h>
-#include <iostream>
-#include <iomanip>
 #include <algorithm>
 #include <cmath>
+#include <iomanip>
+#include <iostream>
+#include <ros/console.h>
 
+#include <tiago_arm_effort_controller/EofPose.h>
 #include <tiago_arm_effort_controller/TorqueCmd.h>
 
-namespace force_control
-{
-  /*! Enum that defines the type of joint */
-  enum JointType
-  {
+namespace force_control {
+/*! Enum that defines the type of joint */
+enum JointType {
     STATIC,             /*!< Joint not actuated in the controller */
     ACTUATED,           /*!< Joint actuaded in the controller. Resource of the controller */
     ACTUATED_NO_CONTROL /*!< Joint commanded constantly with zero effort. Resource of the controller */
-  };
+};
 
-  //! Gravity Compensation Parameters
-  /*!
-    Parameters related with the gravity compensation controller.
-      - static_friction: friction of the motor that needs to be overcome to start moving the joint
-      - viscous_friction: friction of the motor when the joint is being moved.
-      - velocity_tolerance: velocity at which static friction is not taken in account.
+//! Gravity Compensation Parameters
+/*!
+  Parameters related with the gravity compensation controller.
+    - static_friction: friction of the motor that needs to be overcome to start moving the joint
+    - viscous_friction: friction of the motor when the joint is being moved.
+    - velocity_tolerance: velocity at which static friction is not taken in account.
 
-    This parameters are specific for each actuated joint, and could be modify by the dynamic reconfigure.
-  */
-  struct GravityCompensationParameters
-  {
+  This parameters are specific for each actuated joint, and could be modify by the dynamic reconfigure.
+*/
+struct GravityCompensationParameters {
     double static_friction = 0.0;
     double viscous_friction = 0.0;
     double velocity_tolerance = 0.0;
-  };
+};
 
-  //! Actuator Parameters
-  /*!
-    Parameters related with the actuators/motor of the actuated joints.
-      - motor_torque_constant: motor torque constatn specs.
-      - reduction_ratio: gear reduction ratio.
+//! Actuator Parameters
+/*!
+  Parameters related with the actuators/motor of the actuated joints.
+    - motor_torque_constant: motor torque constatn specs.
+    - reduction_ratio: gear reduction ratio.
 
-    This parameters are specific for each motor and should not be modfied. Those are loaded in the param server from the config files.
-  */
-  struct ActuatorParameters
-  {
+  This parameters are specific for each motor and should not be modfied. Those are loaded in the param server from the config files.
+*/
+struct ActuatorParameters {
     double motor_torque_constant = 0.0;
     double reduction_ratio = 0.0;
-  };
+};
 
-  //! Actuated Joint
-  /*!
-    Struct that contains the parameters and the joint handle interface to send commands to the actuator.
-      - joint_handle: control interface used to read the actual the actual values of the joint (in terms of position, velocity and effort),
-      and that allows to send commands to the joint to send it to a specific position velocity or effort.
-      - actuator_parameters: parameters of the actuator used to calculate the desired effort.
-      - friction_parameters: parameters of the gravity compensation controller used to calculate the desired effort.
-  */
-  struct ActuatedJoint
-  {
+//! Actuated Joint
+/*!
+  Struct that contains the parameters and the joint handle interface to send commands to the actuator.
+    - joint_handle: control interface used to read the actual the actual values of the joint (in terms of position, velocity and effort),
+    and that allows to send commands to the joint to send it to a specific position velocity or effort.
+    - actuator_parameters: parameters of the actuator used to calculate the desired effort.
+    - friction_parameters: parameters of the gravity compensation controller used to calculate the desired effort.
+*/
+struct ActuatedJoint {
     hardware_interface::JointHandle joint_handle;
     ActuatorParameters actuator_parameters;
     GravityCompensationParameters friction_parameters;
-  };
+};
 
-  //! My Tiago Controller
-  /*!
-    TIAGo controller which serves as a dual controller for TIAGo's arm .
-    This class derives from the controller_interface::ControllerBase class from ros_control.
-  */
-  class MyTiagoController : public controller_interface::ControllerBase
-  {
-  public:
+//! My Tiago Controller
+/*!
+  TIAGo controller which serves as a dual controller for TIAGo's arm .
+  This class derives from the controller_interface::ControllerBase class from ros_control.
+*/
+class MyTiagoController : public controller_interface::ControllerBase {
+public:
     //! initRequest
     /*!
       Function to initialize the controller that is launched when the controller is loaded
@@ -121,7 +117,7 @@ namespace force_control
     */
     void stopping(const ros::Time &time);
 
-  private:
+private:
     //! init
     /*!
       Function to initialize controller that is called from the initRequest function
@@ -134,10 +130,13 @@ namespace force_control
      * @brief compute the desired torque to compensate gravity
      */
     Eigen::VectorXd gravityCompensation();
+    // Eigen::VectorXd poseControl(Eigen::VectorXd dX, Eigen::VectorXd dXdot, Eigen::VectorXd dXddot,
+    //                                                Eigen::VectorXd X, Eigen::VectorXd Xdot);
 
     ros::Publisher torque_cmd_pub_;
+    ros::Publisher eof_pose_pub_;
 
-    RigidBodyDynamics::Model rbdl_model_;  /*!< Robot model from __RBDL__ */
+    RigidBodyDynamics::Model rbdl_model_; /*!< Robot model from __RBDL__ */
 
     pinocchio::Model pin_model_; /*!< Robot model from Pinocchio */
     pinocchio::Model reduced_model_;
@@ -152,9 +151,9 @@ namespace force_control
     std::map<std::string, hardware_interface::JointStateHandle> static_joints_; /*!< Map with the static joints and his hardware interface to read the current position */
 
     ddynamic_reconfigure::DDynamicReconfigurePtr ddr_; /*!< Dyanic reconfigure */
-  };
+};
 
-}
+} // namespace force_control
 
 // Exports the MyTiagoController as a plugin of ros_control
 PLUGINLIB_EXPORT_CLASS(force_control::MyTiagoController, controller_interface::ControllerBase)

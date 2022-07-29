@@ -22,6 +22,7 @@ find_package(pinocchio REQUIRED)
 add_message_files(
   FILES
   TorqueCmd.msg
+  EofPose.msg
 )
 
 generate_messages(
