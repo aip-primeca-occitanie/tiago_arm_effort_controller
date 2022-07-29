@@ -11,10 +11,12 @@
 #include "pinocchio/algorithm/kinematics.hpp"
 #include "pinocchio/algorithm/model.hpp"
 #include "pinocchio/algorithm/rnea.hpp"
+#include "pinocchio/algorithm/compute-all-terms.hpp"
 #include "pinocchio/parsers/sample-models.hpp"
 #include "pinocchio/parsers/urdf.hpp"
 #include "pinocchio/math/rpy.hpp"
 #include "ros/ros.h"
+#include "ros/package.h"
 
 #include <algorithm>
 #include <cmath>

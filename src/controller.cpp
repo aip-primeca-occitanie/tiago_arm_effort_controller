@@ -109,6 +109,9 @@ bool MyTiagoController::init(hardware_interface::EffortJointInterface *effort_if
     ///__PINOCCHIO__///
 
     // Load the urdf model
+    std::string path = ros::package::getPath("tiago_arm_effort_controller");
+    path = path + "/urdf/robot_description.urdf";
+    ROS_R(path);
     const std::string urdf_filename = URDF_PATH;
 
     ROS_Y(">>> creating the pinocchio model of the whole robot");
@@ -292,7 +295,8 @@ Eigen::VectorXd MyTiagoController::gravityCompensation() {
     Eigen::VectorXd a = Eigen::VectorXd::Zero(reduced_model_.nv);
 
     pinocchio::Data data(reduced_model_);
-    pinocchio::forwardKinematics(reduced_model_, data, q_act_); // Update the joint placements according to the current joint configuration
+    //pinocchio::forwardKinematics(reduced_model_, data, q_act_); // Update the joint placements according to the current joint configuration
+    pinocchio::computeAllTerms(reduced_model_,data,q_act_,v);
 
     const Eigen::VectorXd &tau = pinocchio::rnea(reduced_model_, data, q_act_, v, a);
     // ROS_Y("tau gravity: " << tau.transpose());
@@ -365,7 +369,7 @@ void MyTiagoController::update(const ros::Time &time, const ros::Duration &perio
     pinocchio::forwardKinematics(reduced_model_, reduced_data, q_act_); // Update the joint placements according to the current joint configuration
     auto tau_gravity = gravityCompensation();                           // Compute the minimum torque to maintain the robot at the current position
 
-    ROS_R("q_act:" << q_act_);
+    //ROS_R("q_act:" << q_act_);
 
     // auto tau_pose = poseControl(q_act_,qdot_act,Eigen::VectorXd::Zero(reduced_model_.nv),q_act_,qdot_act);
     // ROS_R("tau_pose: " << tau_pose);
