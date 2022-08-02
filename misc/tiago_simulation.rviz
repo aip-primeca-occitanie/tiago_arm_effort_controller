@@ -1,10 +1,11 @@
 Panels:
   - Class: rviz/Displays
-    Help Height: 84
+    Help Height: 0
     Name: Displays
     Property Tree Widget:
       Expanded:
         - /MotionPlanning1
+        - /MotionPlanning1/Scene Geometry1
         - /MotionPlanning1/Scene Robot1
         - /MotionPlanning1/Scene Robot1/Link/Joint Tree1
         - /MotionPlanning1/Scene Robot1/Link/Joint Tree1/base_footprint1
@@ -109,6 +110,7 @@ Panels:
         - /MotionPlanning1/Scene Robot1/Link/Joint Tree1/base_footprint1/base_footprint_joint1/base_link1/torso_fixed_joint1/torso_fixed_link1/torso_lift_joint1/torso_lift_link1/arm_1_joint1/arm_1_link1/arm_2_joint1/arm_2_link1/arm_3_joint1/arm_3_link1/arm_4_joint1/arm_4_link1/arm_5_joint1/arm_5_link1/arm_6_joint1/arm_6_link1
         - /MotionPlanning1/Scene Robot1/Link/Joint Tree1/base_footprint1/base_footprint_joint1/base_link1/torso_fixed_joint1/torso_fixed_link1/torso_lift_joint1/torso_lift_link1/arm_1_joint1/arm_1_link1/arm_2_joint1/arm_2_link1/arm_3_joint1/arm_3_link1/arm_4_joint1/arm_4_link1/arm_5_joint1/arm_5_link1/arm_6_joint1/arm_6_link1/arm_7_joint1
         - /MotionPlanning1/Scene Robot1/Link/Joint Tree1/base_footprint1/base_footprint_joint1/base_link1/torso_fixed_joint1/torso_fixed_link1/torso_lift_joint1/torso_lift_link1/arm_1_joint1/arm_1_link1/arm_2_joint1/arm_2_link1/arm_3_joint1/arm_3_link1/arm_4_joint1/arm_4_link1/arm_5_joint1/arm_5_link1/arm_6_joint1/arm_6_link1/arm_7_joint1/Details1
+        - /MotionPlanning1/Scene Robot1/Link/Joint Tree1/base_footprint1/base_footprint_joint1/base_link1/torso_fixed_joint1/torso_fixed_link1/torso_lift_joint1/torso_lift_link1/arm_1_joint1/arm_1_link1/arm_2_joint1/arm_2_link1/arm_3_joint1/arm_3_link1/arm_4_joint1/arm_4_link1/arm_5_joint1/arm_5_link1/arm_6_joint1/arm_6_link1/arm_7_joint1/Details1/Position1
         - /MotionPlanning1/Scene Robot1/Link/Joint Tree1/base_footprint1/base_footprint_joint1/base_link1/torso_fixed_joint1/torso_fixed_link1/torso_lift_joint1/torso_lift_link1/arm_1_joint1/arm_1_link1/arm_2_joint1/arm_2_link1/arm_3_joint1/arm_3_link1/arm_4_joint1/arm_4_link1/arm_5_joint1/arm_5_link1/arm_6_joint1/arm_6_link1/arm_7_joint1/arm_7_link1
         - /MotionPlanning1/Scene Robot1/Link/Joint Tree1/base_footprint1/base_footprint_joint1/base_link1/torso_fixed_joint1/torso_fixed_link1/torso_lift_joint1/torso_lift_link1/arm_1_joint1/arm_1_link1/arm_2_joint1/arm_2_link1/arm_3_joint1/arm_3_link1/arm_4_joint1/arm_4_link1/arm_5_joint1/arm_5_link1/arm_6_joint1/arm_6_link1/arm_7_joint1/arm_7_link1/arm_tool_joint1
         - /MotionPlanning1/Scene Robot1/Link/Joint Tree1/base_footprint1/base_footprint_joint1/base_link1/torso_fixed_joint1/torso_fixed_link1/torso_lift_joint1/torso_lift_link1/arm_1_joint1/arm_1_link1/arm_2_joint1/arm_2_link1/arm_3_joint1/arm_3_link1/arm_4_joint1/arm_4_link1/arm_5_joint1/arm_5_link1/arm_6_joint1/arm_6_link1/arm_7_joint1/arm_7_link1/arm_tool_joint1/Details1
@@ -170,8 +172,9 @@ Panels:
         - /MotionPlanning1/Planning Request1
         - /Effort1
         - /Effort1/Joints1
+        - /WORLD FRAME1
       Splitter Ratio: 0.7425600290298462
-    Tree Height: 277
+    Tree Height: 760
   - Class: rviz/Help
     Name: Help
   - Class: rviz/Views
@@ -541,7 +544,7 @@ Visualization Manager:
               Show Trail: false
             base_footprint_joint:
               Details:
-                Show Axes: true
+                Show Axes: false
               Value: true
               base_link:
                 Details:
@@ -898,7 +901,7 @@ Visualization Manager:
                                                         Value: true
                                                         wrist_ft_joint:
                                                           Details:
-                                                            Show Axes: true
+                                                            Show Axes: false
                                                           Value: true
                                                           wrist_ft_link:
                                                             Details:
@@ -928,7 +931,7 @@ Visualization Manager:
                                                                     Value: true
                                                                     gripper_grasping_frame_joint:
                                                                       Details:
-                                                                        Show Axes: true
+                                                                        Show Axes: false
                                                                       gripper_grasping_frame:
                                                                         Details:
                                                                           Alpha: 1
@@ -1096,6 +1099,13 @@ Visualization Manager:
       Unreliable: false
       Value: true
       Width: 0.019999999552965164
+    - Class: rviz/Axes
+      Enabled: true
+      Length: 0.30000001192092896
+      Name: WORLD FRAME
+      Radius: 0.029999999329447746
+      Reference Frame: <Fixed Frame>
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -1112,7 +1122,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 2.3967597484588623
+      Distance: 2.437664031982422
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -1127,10 +1137,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.4547969698905945
+      Pitch: 0.2197970598936081
       Target Frame: base_footprint
       Value: XYOrbit (rviz)
-      Yaw: 5.949930191040039
+      Yaw: 6.074916362762451
     Saved: ~
 Window Geometry:
   Displays:
@@ -1144,9 +1154,9 @@ Window Geometry:
     collapsed: false
   MotionPlanning - Trajectory Slider:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000100000000000004ca00000335fc0200000007fb000000100044006900730070006c006100790073010000003d000001a6000000c900fffffffb0000000800480065006c00700000000342000000bb0000006e00fffffffb0000000a0056006900650077007300000003b0000000b0000000a400fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000374000001890000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000004100fffffffb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e006701000001e9000001890000018900ffffff0000016f0000033500000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000100000000000004ce00000335fc0200000007fb000000100044006900730070006c006100790073010000003d00000335000000c900fffffffb0000000800480065006c00700000000342000000bb0000006e00fffffffb0000000a0056006900650077007300000003b0000000b0000000a400fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000374000001890000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000004100fffffffb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e006700000001de000001940000018900ffffff000001f40000033500000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Views:
     collapsed: false
-  Width: 1599
-  X: 191
-  Y: 27
+  Width: 1736
+  X: 100
+  Y: 76
