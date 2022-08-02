@@ -36,13 +36,13 @@ roslaunch tiago_arm_effort_controller tiago_arm_effort_controller.launch robot:=
 
 ## on the TIAGo
 
-Terminal :computer::
+:computer: pal@development:
 ```
 cd ~/tiago_ws
 catkin build
 rosrun pal_deploy deploy.py tiago-155c
 ```
-Terminal :robot::
+:robot: pal@tiago-155c:
 
 > :bulb: to connect to the TIAGo's terminal:
 > ```
