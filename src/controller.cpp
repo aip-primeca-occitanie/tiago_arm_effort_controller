@@ -9,7 +9,6 @@
 #define URDF_PATH_2 "/home/pal/tiago_ws/src/tiago_arm_effort_controller/urdf/robot_description.urdf" // /!\ ne peux pas marcher sur le tiago !!!
 
 template <typename T>
-
 bool is_in_vector(const std::vector<T> &vector, const T &elt) {
     return vector.end() != std::find(vector.begin(), vector.end(), elt);
 }
@@ -348,7 +347,7 @@ void MyTiagoController::update(const ros::Time &time, const ros::Duration &perio
     static std::string controller = "RBDL"; // "RBDL" or "Pinocchio"/"Pin"
 
     // Read the current position of all the joints (and velocity)
-    Eigen::VectorXd qdot_act;
+    // Eigen::VectorXd qdot_act;
     for (size_t i = 0; i < joint_names_.size(); ++i) {
         if (joint_types_[joint_names_[i]] == JointType::ACTUATED ||
             joint_types_[joint_names_[i]] == JointType::ACTUATED_NO_CONTROL)
@@ -369,16 +368,9 @@ void MyTiagoController::update(const ros::Time &time, const ros::Duration &perio
     pinocchio::forwardKinematics(reduced_model_, reduced_data, q_act_); // Update the joint placements according to the current joint configuration
     auto tau_gravity = gravityCompensation();                           // Compute the minimum torque to maintain the robot at the current position
 
-    //ROS_R("q_act:" << q_act_);
-
-    // auto tau_pose = poseControl(q_act_,qdot_act,Eigen::VectorXd::Zero(reduced_model_.nv),q_act_,qdot_act);
-    // ROS_R("tau_pose: " << tau_pose);
-
-    auto tau = tau_gravity; // for future torque implementations
-
     // Computes the pose of the end-effector
     pinocchio::Model::Index idx = reduced_model_.existJointName("arm_7_joint") ? reduced_model_.getJointId("arm_7_joint") : (pinocchio::Model::Index)(reduced_model_.njoints - 1);
-    auto eof_pose = reduced_data.oMi[idx]; // 6: arm_7_joint
+    auto eof_pose = reduced_data.oMi[idx];
     tiago_arm_effort_controller::EofPose eof_msg;
     eof_msg.x = eof_pose.translation()[0];
     eof_msg.y = eof_pose.translation()[1];
@@ -391,7 +383,63 @@ void MyTiagoController::update(const ros::Time &time, const ros::Duration &perio
 
     eof_pose_pub_.publish(eof_msg);
 
-    // ROS_R("pose of the end_effector:" << eof_pose); // output .R : the rotation matrix and .p : the position matrix
+    //ROS_R("q_act:" << q_act_);
+    pinocchio::forwardKinematics(reduced_model_, reduced_data, q_act_);
+    pinocchio::Data::Matrix6x J(6,reduced_model_.nv);
+    J.fill(0.);
+    pinocchio::computeJointJacobians(reduced_model_, reduced_data);
+    pinocchio::getJointJacobian(reduced_model_, reduced_data, reduced_model_.getJointId("arm_7_joint"), pinocchio::LOCAL_WORLD_ALIGNED, J);
+    ROS_R("q:\n" << q_act_.transpose());
+    ROS_R("J:\n" << J);
+
+    const double Kp = 1;
+    const double Kd = 2 * sqrt(Kp);
+    Eigen::VectorXd X(6);
+    X.fill(0.);
+
+    // desired translations of the eof
+    double dXx = 0.1500;// 0.17; // home: 0.1500
+    double dXy = 0.1567;// 0.20; // home: 0.1567
+    double dXz = 0.5722;// 0.65; // home: 0.5722
+
+    X(0) = dXx - eof_msg.x;
+    X(1) = dXy - eof_msg.y;
+    X(2) = dXz - eof_msg.z;
+    X(3) = 0;
+    X(4) = 0;
+    X(5) = 0;
+
+    auto X_Kp = (X) * Kp;
+    //ROS_B("X_Kp:\n" << X_Kp);
+
+    auto A = pinocchio::crba(reduced_model_, reduced_data, q_act_);
+    //ROS_B("A:\n" << A);
+    auto Areduced = A.block(1,1,6,6);
+    ROS_C("Areduced:\n" << Areduced);
+
+
+    auto Jreduced = J.block(0,1,6,6);
+    ROS_C("Jreduced:\n" << Jreduced);
+    auto Jinv = Jreduced.inverse();
+    //ROS_B("Jinv:\n" << Jinv);
+
+    auto A_Jinv = Areduced*Jinv;
+    ROS_B("A_Jinv:\n" << A_Jinv);
+
+    ROS_R("X_Kp.size: " << X_Kp.rows() << "x" << X_Kp.cols());
+    ROS_R("A_Jinv.size: " << A_Jinv.rows() << "x" << A_Jinv.cols());
+
+    auto gamma = A_Jinv*X_Kp;
+    ROS_B("tau (Gamma = X_Kp*A_Jinv):\n" << gamma);
+    Eigen::VectorXd gamma8(8);
+    gamma8.fill(0.);
+    for (int i=0; i<6; i++)
+        gamma8(i+1)=gamma(i);
+
+    // auto tau_pose = poseControl(q_act_,qdot_act,Eigen::VectorXd::Zero(reduced_model_.nv),q_act_,qdot_act);
+    // ROS_R("tau_pose: " << tau_pose);
+
+    auto tau = tau_gravity; // for future torque implementations
 
     ///__SHARED__///
 
@@ -400,6 +448,7 @@ void MyTiagoController::update(const ros::Time &time, const ros::Duration &perio
 
         msg.rbdl_gravity_compensation[i] = tau_cmd_[i];
         msg.pin_gravity_compensation[i] = tau(i);
+        msg.pin_pose_control[i] = gamma8(i);
 
         // ...check those one that are actuated
         if (joint_types_[joint_names_[i]] == JointType::ACTUATED) {
@@ -481,15 +530,15 @@ void MyTiagoController::update(const ros::Time &time, const ros::Duration &perio
                 //     desired_effort = 0.3 * sin(2 * 3.141592653 * Fc * secs);
                 // }
 
-                // Security effort limiter
-                // auto effortLimit = reduced_model_.effortLimit[i] / 2;
-                // if (desired_effort > effortLimit) {
-                //     ROS_R("/!\\ effort " << desired_effort << " limited to " << effortLimit << " /!\\");
-                //     desired_effort = effortLimit;
-                // } else if (desired_effort < -effortLimit) {
-                //     ROS_R("/!\\ effort " << desired_effort << " limited to " << -effortLimit << " /!\\");
-                //     desired_effort = -effortLimit;
-                // }
+                /* /!\ effort limiter /!\ */
+                auto effortLimit = reduced_model_.effortLimit[i] / 2;
+                if (desired_effort > effortLimit) {
+                    ROS_R("/!\\ effort " << desired_effort << " limited to " << effortLimit << " /!\\");
+                    desired_effort = effortLimit;
+                } else if (desired_effort < -effortLimit) {
+                    ROS_R("/!\\ effort " << desired_effort << " limited to " << -effortLimit << " /!\\");
+                    desired_effort = -effortLimit;
+                }
 
                 actuated_joint.joint_handle.setCommand(desired_effort);
             }
