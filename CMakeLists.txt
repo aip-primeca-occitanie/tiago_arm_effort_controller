@@ -23,6 +23,8 @@ add_message_files(
   FILES
   TorqueCmd.msg
   EofPose.msg
+  Teleop.msg
+  Print.msg
 )
 
 generate_messages(
@@ -76,6 +78,9 @@ install(DIRECTORY config/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config)
 
 install(DIRECTORY urdf/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+
+install(DIRECTORY scripts/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 if (CATKIN_ENABLE_TESTING)

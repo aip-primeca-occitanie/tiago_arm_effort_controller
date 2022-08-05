@@ -1,22 +1,24 @@
 #include <pinocchio/fwd.hpp> // /!\ must be before all includes
+
 #include <controller_interface/controller.h>
 #include <ddynamic_reconfigure/ddynamic_reconfigure.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <pluginlib/class_list_macros.h>
 #include <rbdl/Dynamics.h>
+#include <rbdl/Kinematics.h>
 
+#include "pinocchio/algorithm/compute-all-terms.hpp"
 #include "pinocchio/algorithm/crba.hpp"
 #include "pinocchio/algorithm/jacobian.hpp"
 #include "pinocchio/algorithm/joint-configuration.hpp"
 #include "pinocchio/algorithm/kinematics.hpp"
 #include "pinocchio/algorithm/model.hpp"
 #include "pinocchio/algorithm/rnea.hpp"
-#include "pinocchio/algorithm/compute-all-terms.hpp"
+#include "pinocchio/math/rpy.hpp"
 #include "pinocchio/parsers/sample-models.hpp"
 #include "pinocchio/parsers/urdf.hpp"
-#include "pinocchio/math/rpy.hpp"
-#include "ros/ros.h"
 #include "ros/package.h"
+#include "ros/ros.h"
 
 #include <algorithm>
 #include <cmath>
@@ -25,6 +27,8 @@
 #include <ros/console.h>
 
 #include <tiago_arm_effort_controller/EofPose.h>
+#include <tiago_arm_effort_controller/Print.h>
+#include <tiago_arm_effort_controller/Teleop.h>
 #include <tiago_arm_effort_controller/TorqueCmd.h>
 
 namespace force_control {
@@ -131,28 +135,59 @@ private:
     /**
      * @brief compute the desired torque to compensate gravity
      */
-    Eigen::VectorXd gravityCompensation();
+    Eigen::VectorXd gravityCompensation(pinocchio::Data data);
+
+    Eigen::VectorXd poseControl_q(Eigen::VectorXd qd);
+
+    Eigen::VectorXd poseControl_X(Eigen::VectorXd X, Eigen::VectorXd Xd, pinocchio::Data::Matrix6x J);
+
+    Eigen::VectorXd poseControl_X_teleop(Eigen::VectorXd X, Eigen::VectorXd Xd, pinocchio::Data::Matrix6x J);
+
     // Eigen::VectorXd poseControl(Eigen::VectorXd dX, Eigen::VectorXd dXdot, Eigen::VectorXd dXddot,
     //                                                Eigen::VectorXd X, Eigen::VectorXd Xdot);
 
-    ros::Publisher torque_cmd_pub_;
-    ros::Publisher eof_pose_pub_;
+    void teleopCallBack(const tiago_arm_effort_controller::Teleop &msg);
 
-    RigidBodyDynamics::Model rbdl_model_; /*!< Robot model from __RBDL__ */
+    /*Publisher(s)*/
+    ros::Publisher torque_cmd_pub_; /*!< Publisher for the torque commands */
+    ros::Publisher eof_pose_pub_;   /*!< Publisher for the pose of the end effector */
+    ros::Publisher print_pub_;      /*!< Publisher for printing data */
 
-    pinocchio::Model pin_model_; /*!< Robot model from Pinocchio */
-    pinocchio::Model reduced_model_;
+    /*Subscriber(s)*/
+    ros::Subscriber teleop_sub_; /*!< Subscriber for the teleoperation */
 
-    Eigen::VectorXd q_zero_;  /*!< Zero vector with joint_names size */
-    Eigen::VectorXd tau_cmd_; /*!< Vector with the necessary torque to maintain gravity */
-    Eigen::VectorXd q_act_;   /*!< Vector with the current position of the joint states */
+    /*Attributes*/
+    double Kp_; /*!< Teleoperated Gain */
+
+    RigidBodyDynamics::Model rbdl_model_; /*!< Robot model from RBDL */
+
+    pinocchio::Model pin_model_;     /*!< Robot model from Pinocchio */
+    pinocchio::Model reduced_model_; /*!< Reduced robot model from Pinocchio */
+
+    Eigen::VectorXd q_zero_;    /*!< Zero vector with joint_names size */
+    Eigen::VectorXd tau_cmd_;   /*!< Vector with the necessary torque to maintain gravity */
+    Eigen::VectorXd q_mesured_; /*!< Vector with the current position of the joint states */
 
     std::vector<std::string> joint_names_;                                      /*!< Vector with the joint names of all the joints, including the actuated and the static ones */
     std::map<std::string, JointType> joint_types_;                              /*!< Map to define which joint are actuated and which one are static */
     std::map<std::string, ActuatedJoint> actuated_joints_;                      /*!< Map with the actuated joints and his parameters + hardware interface to read and write commands*/
     std::map<std::string, hardware_interface::JointStateHandle> static_joints_; /*!< Map with the static joints and his hardware interface to read the current position */
 
-    ddynamic_reconfigure::DDynamicReconfigurePtr ddr_; /*!< Dyanic reconfigure */
+    ddynamic_reconfigure::DDynamicReconfigurePtr ddr_; /*!< Dynamic reconfigure */
+
+    /*Enums as in Teleop.msg*/
+    enum DynLib { RBDL = 0,
+                  Pin = 1 };
+    enum ControlType { GC = 0,
+                       PC_q = 1,
+                       PC_X = 2,
+                       DC = 3 };
+
+    DynLib controller_lib_;       /*!< Dynamic lib selector (RBDL/Pin) */
+    ControlType controller_type_; /*!< Controller type selector (GC/PC_q/PC_X/DC) */
+
+    const std::vector<std::string> dyn_lib_ = {"RBDl", "Pinocchio"};
+    const std::vector<std::string> control_type_ = {"GC", "PC_q", "PC_X", "DC"};
 };
 
 } // namespace force_control
