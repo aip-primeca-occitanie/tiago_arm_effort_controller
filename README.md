@@ -15,6 +15,8 @@ Terminal :one::
 cd ~/tiago_ws
 catkin build
 source devel/setup.bash
+```
+```
 roslaunch tiago_gazebo tiago_gazebo.launch robot:=steel
 ```
 
