@@ -11,8 +11,8 @@ joints:
     type: static
   arm_1_joint:
     type: actuated
-    motor_torque_constant: 0.0
-    reduction_ratio: 0.0
+    motor_torque_constant: 0.136
+    reduction_ratio: 100.0
   arm_2_joint:
     type: actuated
     motor_torque_constant: 0.136
@@ -24,17 +24,17 @@ joints:
   arm_4_joint:
     type: actuated
     motor_torque_constant: -0.087
-    reduction_ratio: 100
+    reduction_ratio: 100.0
   arm_5_joint:
-    type: no_control
-    motor_torque_constant: 0.0
-    reduction_ratio: 0.0
+    type: actuated
+    motor_torque_constant: -0.0613
+    reduction_ratio: 336.0
   arm_6_joint:
-    type: no_control
-    motor_torque_constant: 0.0
-    reduction_ratio: 0.0
+    type: actuated
+    motor_torque_constant: 0.0613
+    reduction_ratio: 336.0
   arm_7_joint:
-    type: no_control
-    motor_torque_constant: 0.0
-    reduction_ratio: 0.0
+    type: actuated
+    motor_torque_constant: 0.0613
+    reduction_ratio: 336.0
 
