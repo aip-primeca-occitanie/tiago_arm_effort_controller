@@ -77,7 +77,7 @@ bool MyTiagoController::init(hardware_interface::EffortJointInterface *effort_if
                              hardware_interface::JointStateInterface *joint_state_iface,
                              ros::NodeHandle & /*root_nh*/, ros::NodeHandle &control_nh) {
 
-    torque_cmd_pub_ = control_nh.advertise<tiago_arm_effort_controller::TorqueCmd>("torque_cmd", 1);
+    //torque_cmd_pub_ = control_nh.advertise<tiago_arm_effort_controller::TorqueCmd>("torque_cmd", 1);
     eof_pose_pub_ = control_nh.advertise<tiago_arm_effort_controller::EofPose>("eof_pose", 1);
     print_pub_ = control_nh.advertise<tiago_arm_effort_controller::Print>("print", 1);
     teleop_sub_ = control_nh.subscribe("teleop", 10, &MyTiagoController::teleopCallBack, this);
@@ -86,7 +86,7 @@ bool MyTiagoController::init(hardware_interface::EffortJointInterface *effort_if
     controller_lib_ = RBDL;
     controller_type_ = GC;
 
-    Kp_ = 1;
+    Kp_ = 20;
 
     ROS_O(">>> Loading MyTiagoController");
 
@@ -126,9 +126,9 @@ bool MyTiagoController::init(hardware_interface::EffortJointInterface *effort_if
 
     /*Building Pinocchio model*/
     // Load the urdf model
-    std::string path = ros::package::getPath("tiago_arm_effort_controller");
-    path = path + "/urdf/robot_description.urdf";
-    ROS_R("urdf path: " << path);
+    // std::string path = ros::package::getPath("tiago_arm_effort_controller");
+    // path = path + "/urdf/robot_description.urdf";
+    // ROS_R("urdf path: " << path);
     const std::string urdf_filename = URDF_PATH;
     // Create the pinocchio model
     ROS_Y(">>> creating the pinocchio model of the whole robot");
@@ -274,7 +274,7 @@ bool MyTiagoController::init(hardware_interface::EffortJointInterface *effort_if
     assert(joint_types_.size() == joint_names_.size());
     assert(joint_types_.size() == actuated_joints_.size() + static_joints_.size());
 
-    // Iinitializa q_mesured_, q_zero_, tau_cmd_
+    // Iinitialize q_mesured_, q_zero_, tau_cmd_
     q_mesured_.resize(joint_names_.size());
     q_zero_.resize(joint_names_.size());
     tau_cmd_.resize(joint_names_.size());
@@ -309,21 +309,57 @@ Eigen::VectorXd MyTiagoController::gravityCompensation(pinocchio::Data data) {
 
 Eigen::VectorXd MyTiagoController::poseControl_q(Eigen::VectorXd qd) {
     // Static gains
-    static const double Kp = 10;
-    static const double Ki = 0.0002;
+    static const double Kp = 20;
     // Epsilon q (Integrator)
     static Eigen::VectorXd epsilon_q = Eigen::VectorXd::Zero(8);
 
+    // --> delta_q
     auto delta_q = qd - q_mesured_;
-    // ROS_C("delta_q:\n" << delta_q);
-    epsilon_q = epsilon_q + delta_q;
-    auto tau = Kp * (delta_q) + Ki * (epsilon_q);
+    /* coupling of joints 6 & 7 */
+    double dq6 = (delta_q[7] - delta_q[6])/2;
+    double dq7 = (delta_q[7] + delta_q[6])/2;
+    
+    // --> te
+    static ros::Time t1 = ros::Time::now();
+    ros::Time t2 = ros::Time::now();
+    double te = t2.toSec()-t1.toSec();
+    t1 = t2;
+
+    // --> epsilon_q
+    epsilon_q = epsilon_q + (delta_q * te);
+
+    // --> tau
+    auto tau = (Kp * delta_q) + epsilon_q;
     return tau;
+}
+
+inline void followLine(double t){
+    ROS_O("t: " << t);
+    const double totaltime = 10;
+
+    const double xstart = 0.5;
+    const double ystart = -0.2;
+    const double zstart = 0.8;
+
+    const double xend = 0.7;
+    const double yend = 0.1;
+    const double zend = 0.8;
+
+    t = fmod(t,20); // 'reset' t after 20sec
+
+    if (t/10 > 1)
+        t = 10 - fmod(t,10); // count the time backward starting from 10sec
+
+    double x = xstart + ((xend - xstart)/totaltime)*t;
+    double y = ystart + ((yend - ystart)/totaltime)*t;
+    double z = zstart + ((zend - zstart)/totaltime)*t;
+
+    ROS_Y("x: " << x << " | y: " << y << " | z: " << z);
 }
 
 Eigen::VectorXd MyTiagoController::poseControl_X(Eigen::VectorXd X, Eigen::VectorXd Xd, pinocchio::Data::Matrix6x J) {
     // Static gains
-    static const double Kp = 1e1;
+    static const double Kp = 20;
     static const double Ki = 1e-5;
     // Epsilon q (Integrator)
     static Eigen::VectorXd epsilon_q = Eigen::VectorXd::Zero(7);
@@ -335,25 +371,21 @@ Eigen::VectorXd MyTiagoController::poseControl_X(Eigen::VectorXd X, Eigen::Vecto
     delta_X_reduced(2) = delta_X(2);
     // ROS_G("delta_X_reduced:\n" << delta_X_reduced);
 
-    // ROS_G("J:\n" << J);
     auto J_reduced = J.block(0, 1, 3, 7);
-
     // ROS_G("J_reduced:\n" << J_reduced);
     Eigen::MatrixXd Jpinv = J_reduced.completeOrthogonalDecomposition().pseudoInverse();
-    ROS_C("Jpinv:\n" << Jpinv);
-
-    
+    //ROS_C("Jpinv:\n" << Jpinv);
     Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cqr(J_reduced);
     // auto Jpinv2 = cqr.pseudoInverse();
     // ROS_C("Jpinv2:\n" << Jpinv2 << Jpinv.rows() << Jpinv.cols());
-
     auto delta_q = Jpinv * delta_X_reduced;
-    ROS_C("delta_q:\n" << delta_q);
+    //ROS_C("delta_q:\n" << delta_q);
 
     auto delta_q_solve = cqr.solve(delta_X_reduced);
-    ROS_G("delta_q_solve:\n" << delta_q_solve);
+    //ROS_G("delta_q_solve:\n" << delta_q_solve);
     epsilon_q = epsilon_q + delta_q_solve;
     // ROS_G("epsilon_q:\n" << epsilon_q);
+
     auto tau = Kp * (delta_q_solve) + Ki * (epsilon_q);
     Eigen::VectorXd tau_8 = Eigen::VectorXd::Zero(8);
     for (int i = 1; i < 8; i++)
@@ -364,21 +396,34 @@ Eigen::VectorXd MyTiagoController::poseControl_X(Eigen::VectorXd X, Eigen::Vecto
 Eigen::VectorXd MyTiagoController::poseControl_X_teleop(Eigen::VectorXd X, Eigen::VectorXd Xd, pinocchio::Data::Matrix6x J) {
     // Static gains
     // /!\ Using Kp_ !!!
-    static const double Ki = 1e-5;
     // Epsilon q (Integrator)
     static Eigen::VectorXd epsilon_q = Eigen::VectorXd::Zero(7);
 
+    // --> delta_X
     auto delta_X = Xd - X;
     Eigen::VectorXd delta_X_reduced = Eigen::VectorXd::Zero(3);
     delta_X_reduced(0) = delta_X(0);
     delta_X_reduced(1) = delta_X(1);
     delta_X_reduced(2) = delta_X(2);
 
+    // --> delta_q
     auto J_reduced = J.block(0, 1, 3, 7);
-    Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cqr(J_reduced);
-    auto delta_q_solve = cqr.solve(delta_X_reduced);
-    epsilon_q = epsilon_q + delta_q_solve;
-    auto tau = Kp_ * (delta_q_solve) + Ki * (epsilon_q);
+    Eigen::MatrixXd Jpinv = J_reduced.completeOrthogonalDecomposition().pseudoInverse();
+    auto delta_q = Jpinv * delta_X_reduced;
+
+    // --> te
+    static ros::Time t1 = ros::Time::now();
+    ros::Time t2 = ros::Time::now();
+    double te = t2.toSec()-t1.toSec();
+    t1 = t2;
+
+    // followLine(t1.toSec());
+
+    // --> epsilon_q
+    epsilon_q = epsilon_q + (delta_q * te);
+
+    // --> tau
+    auto tau = (Kp_ * delta_q) + epsilon_q;
     Eigen::VectorXd tau_8 = Eigen::VectorXd::Zero(8);
     for (int i = 1; i < 8; i++)
         tau_8(i) = tau(i - 1);
@@ -511,7 +556,7 @@ void MyTiagoController::update(const ros::Time &time, const ros::Duration &perio
     /*__COMMON__*/
 
     /*Set the final tau to send to the robot*/
-    static Eigen::VectorXd tau = Eigen::VectorXd::Zero(joint_names_.size());
+    Eigen::VectorXd tau = Eigen::VectorXd::Zero(joint_names_.size());
     // Choose the dynamic library for the RNEA
     switch (controller_lib_) {
     case Pin:
@@ -530,7 +575,9 @@ void MyTiagoController::update(const ros::Time &time, const ros::Duration &perio
         tau += poseControl_q(qd);
         break;
     case PC_X:
-        tau += poseControl_X(X, Xinit, J);
+        tau += poseControl_X_teleop(X, Xinit, J);
+        // ROS_R("poseControl_X(X, Xinit, J):\n" << poseControl_X(X, Xinit, J));
+        // ROS_O("poseControl_X_teleop(X, Xinit, J):\n" << poseControl_X_teleop(X, Xinit, J));
         break;
     case DC:
         ROS_R(">>> Not yet implemented, defaulting to GC");
@@ -572,7 +619,22 @@ void MyTiagoController::update(const ros::Time &time, const ros::Duration &perio
             double actual_velocity = actuated_joint.joint_handle.getVelocity();
 
             /* Compute the desired effort*/
-            double desired_torque = tau[i];
+            /* and change the desired torque to respect the coupling of joint 6 & 7 */
+            double desired_torque;
+            if (i==6){
+                desired_torque = (tau[7] - tau[6])/2;
+            } else if (i==7){
+                desired_torque = (tau[7] + tau[6])/2;
+            } else {
+                desired_torque = tau[i];
+            }
+
+            if(i==5 || i ==6 || i==7){
+                desired_torque *= 0.5; //add a factor to the last joints to compensate for overshooting
+            }
+            
+
+            //ROS_G("I: " << i << " | desired_torque: " << desired_torque);
 
             desired_torque += actuated_joint.friction_parameters.viscous_friction * actual_velocity;
             if (actual_velocity > actuated_joint.friction_parameters.velocity_tolerance)
@@ -583,6 +645,7 @@ void MyTiagoController::update(const ros::Time &time, const ros::Duration &perio
             double desired_effort =
                 desired_torque / (actuated_joint.actuator_parameters.motor_torque_constant *
                                   actuated_joint.actuator_parameters.reduction_ratio);
+            //ROS_C("I: " << i << " | desired_effort: " << desired_effort);
 
             if (std::isnan(desired_effort)) // If desired effort is not valid
             {
@@ -593,12 +656,12 @@ void MyTiagoController::update(const ros::Time &time, const ros::Duration &perio
                 /*Effort limiter*/
                 auto effortLimit = reduced_model_.effortLimit[i] * 0.9;
                 if (desired_effort > effortLimit) {
-                    ROS_R("/!\\ effort " << desired_effort << " limited to " << effortLimit << " /!\\");
-                    ROS_B(i);
+                    ROS_R("/!\\ effort " << desired_effort << " limited to " << effortLimit << " /!\\"
+                                            << " i: " << i);
                     desired_effort = effortLimit;
                 } else if (desired_effort < -effortLimit) {
-                    ROS_R("/!\\ effort " << desired_effort << " limited to " << -effortLimit << " /!\\");
-                    ROS_B(i);
+                    ROS_R("/!\\ effort " << desired_effort << " limited to " << -effortLimit << " /!\\"
+                                            << " i: " << i);
                     desired_effort = -effortLimit;
                 }
 
