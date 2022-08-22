@@ -1,6 +1,6 @@
 type: "force_control/MyTiagoController"
 robot_model_chains: ["gripper_link"]
-dt: 0.01
+dt: 0.001
 
 viscous_friction: 0.0
 velocity_tolerance: 0.0

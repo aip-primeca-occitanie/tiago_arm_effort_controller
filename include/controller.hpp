@@ -25,6 +25,7 @@
 #include <iomanip>
 #include <iostream>
 #include <ros/console.h>
+#include <Eigen/Geometry>
 
 #include <tiago_arm_effort_controller/EofPose.h>
 #include <tiago_arm_effort_controller/Print.h>
